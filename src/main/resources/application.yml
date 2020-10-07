@@ -1,0 +1,7 @@
+server:
+  port: 8080
+
+escassandra:
+  localDatacenter: datacenter1
+  keyspace: essample
+  port: 9042

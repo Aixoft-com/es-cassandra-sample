@@ -1,0 +1,12 @@
+version: '2'
+services:
+  essample-cassandra-migration:
+    environment:
+      - CASSANDRA_CONTACT_POINT=essample-cassandra
+      - USER=docker-cassandra-migration
+      #- DEBUG_LOG=1 # uncomment to show debug logs during the migration process
+    build:
+      context: .
+      dockerfile: cassandra/cassandra-migration.Dockerfile
+    volumes:
+      - ./cassandra/schema:/cql:ro
