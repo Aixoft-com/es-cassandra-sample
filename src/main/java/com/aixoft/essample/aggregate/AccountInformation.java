@@ -16,7 +16,7 @@ import lombok.Getter;
 import java.util.UUID;
 
 @Getter
-@Aggregate(partitionKey = "account_information_2")
+@Aggregate(tableName = "account_information")
 public class AccountInformation extends AggregateRoot {
 
     private String userName;
