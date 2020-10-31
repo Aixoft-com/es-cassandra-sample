@@ -1,0 +1,40 @@
+POST http://localhost:8080/api/account
+Content-Type: application/json
+
+{
+  "userName" : "Adam",
+  "email" : "adam@o2.pl",
+  "loyalPoints" : 100
+}
+
+###
+
+POST http://localhost:8080/api/account/loyalPoints
+Content-Type: application/json
+
+{
+  "id" : "8833ebf0-1ba5-11eb-b8b5-ed342e3e1cb5",
+  "loyalPoints" : 20
+}
+
+###
+
+PUT http://localhost:8080/api/account/email
+Content-Type: application/json
+
+{
+  "id" : "8833ebf0-1ba5-11eb-b8b5-ed342e3e1cb5",
+  "expectedVersion" : "0.4",
+  "email": "nowy43@o2.pl"
+}
+
+###
+
+POST http://localhost:8080/api/account/snapshot
+Content-Type: application/json
+
+{
+  "id" : "8833ebf0-1ba5-11eb-b8b5-ed342e3e1cb5"
+}
+
+###

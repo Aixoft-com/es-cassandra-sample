@@ -1,0 +1,40 @@
+POST http://localhost:8080/react-api/account
+Content-Type: application/json
+
+{
+  "userName" : "Adam",
+  "email" : "adam@o2.pl",
+  "loyalPoints" : 100
+}
+
+###
+
+POST http://localhost:8080/react-api/account/loyalPoints
+Content-Type: application/json
+
+{
+  "id" : "08d11820-1550-11eb-81f8-811fd50a257e",
+  "loyalPoints" : 20
+}
+
+###
+
+PUT http://localhost:8080/react-api/account/email
+Content-Type: application/json
+
+{
+  "id" : "08d11820-1550-11eb-81f8-811fd50a257e",
+  "expectedVersion" : "1.4",
+  "email": "nowy43@o2.pl"
+}
+
+###
+
+POST http://localhost:8080/react-api/account/snapshot
+Content-Type: application/json
+
+{
+  "id" : "08d11820-1550-11eb-81f8-811fd50a257e"
+}
+
+###

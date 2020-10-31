@@ -1,9 +1,0 @@
-server:
-  port: 8080
-
-escassandra:
-  localDatacenter: datacenter1
-  keyspace: essample
-  schema-action: RECREATE # NONE, CREATE, CREATE_IF_NOT_EXISTS, RECREATE, RECREATE_DROP_UNUSED
-  contact-points:
-    - "127.0.0.1:9042"
