@@ -1,6 +1,7 @@
 package com.aixoft.essample.aggregate;
 
 import com.aixoft.escassandra.service.AggregateStore;
+import com.aixoft.escassandra.service.ReactiveAggregateStore;
 import com.aixoft.essample.EsSampleApplication;
 import com.aixoft.essample.command.AddLoyalPointsCommand;
 import com.aixoft.essample.command.ChangeEmailCommand;
@@ -18,10 +19,13 @@ import java.util.UUID;
 @SpringBootTest(classes = EsSampleApplication.class)
 class AccountInformationTest {
     private static final int Iterations = 100;
-    private static final int ExecutionsInSingleIteration = 100;
+    private static final int ExecutionsInSingleIteration = 50;
 
     @Autowired
     AggregateStore aggregateStore;
+
+    @Autowired
+    ReactiveAggregateStore reactiveAggregateStore;
 
     @Test
     void handleCommandPerformance() {
@@ -51,6 +55,44 @@ class AccountInformationTest {
                 accountInformation2.handleCommand(new AddLoyalPointsCommand(100));
 
                 aggregateStore.save(accountInformation2);
+            }
+
+            log.info("Iteration {}: {}", j, Instant.now().toEpochMilli() - start.toEpochMilli());
+        }
+
+        System.out.println("Total: " + (Instant.now().toEpochMilli() - totalStart.toEpochMilli()));
+
+    }
+
+    @Test
+    void handleReactiveCommandPerformance() {
+        UUID id = UUID.fromString("8e11c770-188c-11eb-b02a-173a433a4019");
+
+        AccountInformation accountInformation = new AccountInformation(id);
+        accountInformation.handleCommand(new CreateAccountCommand("username", "email@gmail.com"));
+
+        reactiveAggregateStore.save(accountInformation)
+                .block();
+
+        Instant totalStart = Instant.now();
+        Instant start;
+
+        reactiveAggregateStore.loadById(id, AccountInformation.class)
+                .doOnNext(accountInformation1 -> accountInformation1.handleCommand(new ChangeEmailCommand("newemail@gmail.com")))
+                .doOnNext(accountInformation1 -> accountInformation1.handleCommand(new AddLoyalPointsCommand(100)))
+                .flatMap(reactiveAggregateStore::save)
+                .block();
+
+        for(int j = 0; j<Iterations; j++) {
+
+            start = Instant.now();
+
+            for(int i = 0; i < ExecutionsInSingleIteration; i++) {
+                reactiveAggregateStore.loadById(id, AccountInformation.class)
+                        .doOnNext(accountInformation1 -> accountInformation1.handleCommand(new ChangeEmailCommand("newemail@gmail.com")))
+                        .doOnNext(accountInformation1 -> accountInformation1.handleCommand(new AddLoyalPointsCommand(100)))
+                        .flatMap(reactiveAggregateStore::save)
+                        .block();
             }
 
             log.info("Iteration {}: {}", j, Instant.now().toEpochMilli() - start.toEpochMilli());
