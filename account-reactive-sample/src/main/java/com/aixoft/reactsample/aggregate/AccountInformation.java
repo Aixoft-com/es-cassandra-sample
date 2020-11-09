@@ -28,23 +28,23 @@ public class AccountInformation extends AggregateRoot {
     }
 
     @Subscribe
-    private void apply(AccountCreated accountCreated, AggregateRoot aggregateRoot) {
+    public void apply(AccountCreated accountCreated) {
         userName = accountCreated.getUserName();
         email = accountCreated.getEmail();
     }
 
     @Subscribe
-    private void apply(EmailModified emailModified, AggregateRoot aggregateRoot) {
+    public void apply(EmailModified emailModified) {
         email = emailModified.getEmail();
     }
 
     @Subscribe
-    private void apply(LoyalPointsAdded loyalPointsAdded, AggregateRoot aggregateRoot) {
+    public void apply(LoyalPointsAdded loyalPointsAdded) {
         loyalPoints += loyalPointsAdded.getLoyalPointsCount();
     }
 
     @Subscribe
-    private void apply(SnapshotCreated snapshotCreated, AggregateRoot aggregateRoot) {
+    public void apply(SnapshotCreated snapshotCreated) {
         userName = snapshotCreated.getUserName();
         email = snapshotCreated.getEmail();
         loyalPoints = snapshotCreated.getLoyalPointsCount();
