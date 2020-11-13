@@ -18,8 +18,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
-import java.util.UUID;
-
 @RequestMapping("/react-api/account")
 @RestController
 @AllArgsConstructor
@@ -39,14 +37,13 @@ public class ReactiveAccountInformationController {
      * @return Mono with the id of newly created aggregate and current version of the aggregate.
      */
     @PostMapping
-    public Mono<ResponseCreateAccountDto> createAccount(@RequestBody CreateAccountDto createAccountDto) {
+    public Mono<ResponseAggregateVersionDto> createAccount(@RequestBody CreateAccountDto createAccountDto) {
 
-        UUID id = Uuids.timeBased();
-        return Mono.just(new AccountInformation(id))
+        return Mono.just(new AccountInformation(Uuids.timeBased()))
             .doOnNext(accountInformation -> accountInformation.handleCommand(new CreateAccountCommand(createAccountDto.getUserName(), createAccountDto.getEmail())))
             .doOnNext(accountInformation -> accountInformation.handleCommand(new AddLoyalPointsCommand(createAccountDto.getLoyalPoints())))
             .flatMap(aggregateStore::save)
-            .map(eventVersion -> new ResponseCreateAccountDto(id, String.format("%d.%d", eventVersion.getMajor(), eventVersion.getMinor())));
+            .map(ResponseAggregateVersionDto::fromAggregate);
     }
 
     /**
@@ -57,12 +54,12 @@ public class ReactiveAccountInformationController {
      * @return Mono with current version of the aggregate.
      */
     @PostMapping("/loyalPoints")
-    public Mono<ResponseEventVersionDto> addLoyalPoints(@RequestBody AddLoyalPointsDto addLoyalPointsDto) {
+    public Mono<ResponseAggregateVersionDto> addLoyalPoints(@RequestBody AddLoyalPointsDto addLoyalPointsDto) {
 
         return aggregateStore.loadById(addLoyalPointsDto.getId(), AccountInformation.class)
             .doOnNext(aggregate -> aggregate.handleCommand(new AddLoyalPointsCommand(addLoyalPointsDto.getLoyalPoints())))
             .flatMap(aggregateStore::save)
-            .map(ResponseEventVersionDto::fromEventVersion);
+            .map(ResponseAggregateVersionDto::fromAggregate);
     }
 
     /**
@@ -75,14 +72,14 @@ public class ReactiveAccountInformationController {
      * @return Mono with current version of the aggregate.
      */
     @PutMapping("/email")
-    public Mono<ResponseEventVersionDto> changeEmail(@RequestBody ChangeEmailDto changeEmailDto)  {
+    public Mono<ResponseAggregateVersionDto> changeEmail(@RequestBody ChangeEmailDto changeEmailDto)  {
         EventVersion expectedEventVersion = EventVersionUtil.parseEventVersion(changeEmailDto.getExpectedVersion());
 
         return aggregateStore.loadById(changeEmailDto.getId(), expectedEventVersion.getMajor(), AccountInformation.class)
                 .doOnNext(aggregate -> assertAccountInformationVersion(expectedEventVersion, aggregate))
                 .doOnNext(aggregate -> aggregate.handleCommand(new ChangeEmailCommand(changeEmailDto.getEmail())))
                 .flatMap(aggregateStore::save)
-                .map(ResponseEventVersionDto::fromEventVersion);
+                .map(ResponseAggregateVersionDto::fromAggregate);
     }
 
     private void assertAccountInformationVersion(EventVersion expectedVersion, AggregateRoot aggregateRoot) throws UnexpectedEventVersionException {
@@ -104,10 +101,10 @@ public class ReactiveAccountInformationController {
      * @return Mono with current version of the aggregate.
      */
     @PostMapping("/snapshot")
-    public Mono<ResponseEventVersionDto> createSnapshot(@RequestBody CreateSnapshotDto createSnapshotDto) {
+    public Mono<ResponseAggregateVersionDto> createSnapshot(@RequestBody CreateSnapshotDto createSnapshotDto) {
          return aggregateStore.loadById(createSnapshotDto.getId(), AccountInformation.class)
                 .doOnNext(aggregate -> aggregate.handleCommand(new CreateSnapshotCommand()))
                 .flatMap(aggregateStore::save)
-                .map(ResponseEventVersionDto::fromEventVersion);
+                .map(ResponseAggregateVersionDto::fromAggregate);
     }
 }

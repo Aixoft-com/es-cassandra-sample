@@ -3,6 +3,7 @@ package com.aixoft.essample.aggregate;
 import com.aixoft.escassandra.aggregate.AggregateRoot;
 import com.aixoft.escassandra.annotation.Aggregate;
 import com.aixoft.escassandra.annotation.Subscribe;
+import com.aixoft.escassandra.annotation.SubscribeAll;
 import com.aixoft.essample.command.AddLoyalPointsCommand;
 import com.aixoft.essample.command.ChangeEmailCommand;
 import com.aixoft.essample.command.CreateAccountCommand;
@@ -28,23 +29,23 @@ public class AccountInformation extends AggregateRoot {
     }
 
     @Subscribe
-    private void apply(AccountCreated accountCreated, AggregateRoot aggregateRoot) {
+    public void apply(AccountCreated accountCreated) {
         userName = accountCreated.getUserName();
         email = accountCreated.getEmail();
     }
 
     @Subscribe
-    private void apply(EmailModified emailModified, AggregateRoot aggregateRoot) {
+    public void apply(EmailModified emailModified) {
         email = emailModified.getEmail();
     }
 
     @Subscribe
-    private void apply(LoyalPointsAdded loyalPointsAdded, AggregateRoot aggregateRoot) {
+    public void apply(LoyalPointsAdded loyalPointsAdded) {
         loyalPoints += loyalPointsAdded.getLoyalPointsCount();
     }
 
     @Subscribe
-    private void apply(SnapshotCreated snapshotCreated, AggregateRoot aggregateRoot) {
+    public void apply(SnapshotCreated snapshotCreated) {
         userName = snapshotCreated.getUserName();
         email = snapshotCreated.getEmail();
         loyalPoints = snapshotCreated.getLoyalPointsCount();
