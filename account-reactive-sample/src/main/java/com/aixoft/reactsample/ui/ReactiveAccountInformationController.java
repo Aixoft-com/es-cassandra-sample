@@ -1,6 +1,6 @@
 package com.aixoft.reactsample.ui;
 
-import com.aixoft.escassandra.aggregate.AggregateRoot;
+import com.aixoft.escassandra.aggregate.Aggregate;
 import com.aixoft.escassandra.model.EventVersion;
 import com.aixoft.escassandra.service.ReactiveAggregateStore;
 import com.aixoft.reactsample.aggregate.AccountInformation;
@@ -8,7 +8,6 @@ import com.aixoft.reactsample.command.AddLoyalPointsCommand;
 import com.aixoft.reactsample.command.ChangeEmailCommand;
 import com.aixoft.reactsample.command.CreateAccountCommand;
 import com.aixoft.reactsample.command.CreateSnapshotCommand;
-import com.aixoft.reactsample.exception.UnexpectedEventVersionException;
 import com.aixoft.reactsample.ui.dto.*;
 import com.aixoft.reactsample.util.EventVersionUtil;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
@@ -39,9 +38,9 @@ public class ReactiveAccountInformationController {
     @PostMapping
     public Mono<ResponseAggregateVersionDto> createAccount(@RequestBody CreateAccountDto createAccountDto) {
 
-        return Mono.just(new AccountInformation(Uuids.timeBased()))
-            .doOnNext(accountInformation -> accountInformation.handleCommand(new CreateAccountCommand(createAccountDto.getUserName(), createAccountDto.getEmail())))
-            .doOnNext(accountInformation -> accountInformation.handleCommand(new AddLoyalPointsCommand(createAccountDto.getLoyalPoints())))
+        return Mono.just(Aggregate.<AccountInformation>create(Uuids.timeBased()))
+            .doOnNext(aggregate -> aggregate.handleCommand(new CreateAccountCommand(createAccountDto.getUserName(), createAccountDto.getEmail())))
+            .doOnNext(aggregate -> aggregate.handleCommand(new AddLoyalPointsCommand(createAccountDto.getLoyalPoints())))
             .flatMap(aggregateStore::save)
             .map(ResponseAggregateVersionDto::fromAggregate);
     }
@@ -76,22 +75,9 @@ public class ReactiveAccountInformationController {
         EventVersion expectedEventVersion = EventVersionUtil.parseEventVersion(changeEmailDto.getExpectedVersion());
 
         return aggregateStore.loadById(changeEmailDto.getId(), expectedEventVersion.getMajor(), AccountInformation.class)
-                .doOnNext(aggregate -> assertAccountInformationVersion(expectedEventVersion, aggregate))
-                .doOnNext(aggregate -> aggregate.handleCommand(new ChangeEmailCommand(changeEmailDto.getEmail())))
+                .doOnNext(aggregate -> aggregate.handleCommand(new ChangeEmailCommand(changeEmailDto.getEmail(), expectedEventVersion)))
                 .flatMap(aggregateStore::save)
                 .map(ResponseAggregateVersionDto::fromAggregate);
-    }
-
-    private void assertAccountInformationVersion(EventVersion expectedVersion, AggregateRoot aggregateRoot) throws UnexpectedEventVersionException {
-        if(aggregateRoot.getCommittedVersion() == null) {
-            throw new UnexpectedEventVersionException("Aggregate not found for given snapshot version");
-        }
-
-        if(expectedVersion != null && !expectedVersion.equals(aggregateRoot.getCommittedVersion())) {
-            throw new UnexpectedEventVersionException(String.format("Current event version is %s.%s",
-                    aggregateRoot.getCommittedVersion().getMajor(),
-                    aggregateRoot.getCommittedVersion().getMinor()));
-        }
     }
 
     /**
@@ -103,7 +89,11 @@ public class ReactiveAccountInformationController {
     @PostMapping("/snapshot")
     public Mono<ResponseAggregateVersionDto> createSnapshot(@RequestBody CreateSnapshotDto createSnapshotDto) {
          return aggregateStore.loadById(createSnapshotDto.getId(), AccountInformation.class)
-                .doOnNext(aggregate -> aggregate.handleCommand(new CreateSnapshotCommand()))
+                .doOnNext(aggregate -> aggregate.handleSnapshotCommand(new CreateSnapshotCommand(
+                        aggregate.getData().getUserName(),
+                        aggregate.getData().getEmail(),
+                        aggregate.getData().getLoyalPoints()))
+                )
                 .flatMap(aggregateStore::save)
                 .map(ResponseAggregateVersionDto::fromAggregate);
     }

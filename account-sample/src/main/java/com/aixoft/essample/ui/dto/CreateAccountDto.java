@@ -1,4 +1,4 @@
-package com.aixoft.reactsample.ui.dto;
+package com.aixoft.essample.ui.dto;
 
 import lombok.Value;
 

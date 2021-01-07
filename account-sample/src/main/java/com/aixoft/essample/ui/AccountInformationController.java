@@ -1,6 +1,6 @@
 package com.aixoft.essample.ui;
 
-import com.aixoft.escassandra.aggregate.AggregateRoot;
+import com.aixoft.escassandra.aggregate.Aggregate;
 import com.aixoft.escassandra.model.EventVersion;
 import com.aixoft.escassandra.service.AggregateStore;
 import com.aixoft.essample.aggregate.AccountInformation;
@@ -9,10 +9,8 @@ import com.aixoft.essample.command.ChangeEmailCommand;
 import com.aixoft.essample.command.CreateAccountCommand;
 import com.aixoft.essample.command.CreateSnapshotCommand;
 import com.aixoft.essample.exception.UnexpectedEventVersionException;
-import com.aixoft.essample.ui.dto.ResponseAggregateVersionDto;
+import com.aixoft.essample.ui.dto.*;
 import com.aixoft.essample.util.EventVersionUtil;
-import com.aixoft.reactsample.ui.dto.AddLoyalPointsDto;
-import com.aixoft.reactsample.ui.dto.ChangeEmailDto;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,7 +18,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @RequestMapping("/api/account")
 @RestController
@@ -41,20 +38,19 @@ public class AccountInformationController {
      * @return Dto with id of newly created aggregate and current version of the aggregate.
      */
     @PostMapping
-    public Optional<ResponseAggregateVersionDto> createAccount(@RequestBody com.aixoft.reactsample.ui.dto.CreateAccountDto createAccountDto) {
+    public Optional<ResponseAggregateVersionDto> createAccount(@RequestBody CreateAccountDto createAccountDto) {
+        Aggregate<AccountInformation> aggregate = Aggregate.create(Uuids.timeBased());
 
-        UUID id = Uuids.timeBased();
+        aggregate.handleCommand(new CreateAccountCommand(createAccountDto.getUserName(), createAccountDto.getEmail()));
+        aggregate.handleCommand(new AddLoyalPointsCommand(createAccountDto.getLoyalPoints()));
 
-        AccountInformation accountInformation = new AccountInformation(id);
-
-        accountInformation.handleCommand(new CreateAccountCommand(createAccountDto.getUserName(), createAccountDto.getEmail()));
-        accountInformation.handleCommand(new AddLoyalPointsCommand(createAccountDto.getLoyalPoints()));
-
-        return aggregateStore.save(accountInformation)
+        return aggregateStore.save(aggregate)
                 .map(ResponseAggregateVersionDto::fromAggregate);
     }
 
     /**
+     * Command validation which ignores event if the validation is failed.
+     * <p>
      * Example presents how to apply single command on aggregate.
      * Snapshot version is not provided in loadById method,
      * so aggregate will be loaded from scratch (starting from 1st event).
@@ -74,10 +70,12 @@ public class AccountInformationController {
     }
 
     /**
+     * Command validation which breaks execution chain if the validation is failed.
+     * <p>
      * Example presents how to apply single command for expected aggregate version.
      * Snapshot version is provided in loadById method,
      * so aggregate will be loaded since provided snapshot version.
-     * Methods verifies if aggregate has expected version and response with error otherwise.
+     * Command verifies if aggregate has expected version and response with error otherwise breaking execution chain.
      * (version is being also verified on save method)
      * @param changeEmailDto
      * @return Dto with current version of the aggregate.
@@ -85,24 +83,16 @@ public class AccountInformationController {
     @PutMapping("/email")
     public ResponseAggregateVersionDto changeEmail(@RequestBody ChangeEmailDto changeEmailDto) {
 
-        EventVersion expectedEventVersion;
-
-        expectedEventVersion = EventVersionUtil.parseEventVersion(changeEmailDto.getExpectedVersion());
+        EventVersion expectedEventVersion = EventVersionUtil.parseEventVersion(changeEmailDto.getExpectedVersion());
 
         return aggregateStore.loadById(changeEmailDto.getId(), expectedEventVersion.getMajor(), AccountInformation.class)
-                .filter(aggregate -> aggregateIsInExpectedVersion(expectedEventVersion, aggregate))
                 .flatMap(aggregate -> {
-                    aggregate.handleCommand(new ChangeEmailCommand(changeEmailDto.getEmail()));
+                    aggregate.handleCommand(new ChangeEmailCommand(changeEmailDto.getEmail(), expectedEventVersion));
 
                     return aggregateStore.save(aggregate);
                 })
                 .map(ResponseAggregateVersionDto::fromAggregate)
                 .orElseThrow(() -> new UnexpectedEventVersionException("Aggregate not found or invalid version provided"));
-    }
-
-    private boolean aggregateIsInExpectedVersion(EventVersion expectedVersion, AggregateRoot aggregateRoot) {
-        return aggregateRoot.getCommittedVersion() != null
-                && expectedVersion.equals(aggregateRoot.getCommittedVersion());
     }
 
     /**
@@ -112,11 +102,14 @@ public class AccountInformationController {
      * @return Mono with current version of the aggregate.
      */
     @PostMapping("/snapshot")
-    public Optional<ResponseAggregateVersionDto> createSnapshot(@RequestBody com.aixoft.reactsample.ui.dto.CreateSnapshotDto createSnapshotDto) {
+    public Optional<ResponseAggregateVersionDto> createSnapshot(@RequestBody CreateSnapshotDto createSnapshotDto) {
 
         return aggregateStore.loadById(createSnapshotDto.getId(), AccountInformation.class)
                 .flatMap(aggregate -> {
-                    aggregate.handleCommand(new CreateSnapshotCommand());
+                    aggregate.handleSnapshotCommand(new CreateSnapshotCommand(
+                            aggregate.getData().getUserName(),
+                            aggregate.getData().getEmail(),
+                            aggregate.getData().getLoyalPoints()));
 
                     return aggregateStore.save(aggregate);
                 })

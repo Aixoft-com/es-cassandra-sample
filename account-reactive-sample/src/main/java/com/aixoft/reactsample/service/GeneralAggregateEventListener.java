@@ -1,16 +1,17 @@
 package com.aixoft.reactsample.service;
 
-import com.aixoft.escassandra.aggregate.AggregateRoot;
 import com.aixoft.escassandra.annotation.SubscribeAll;
+import com.aixoft.escassandra.model.EventVersion;
 import com.aixoft.escassandra.service.EventListener;
 import com.aixoft.escassandra.service.EventRouter;
-import com.aixoft.reactsample.aggregate.AccountInformation;
 import com.aixoft.reactsample.event.AccountCreated;
 import com.aixoft.reactsample.event.EmailModified;
 import com.aixoft.reactsample.event.LoyalPointsAdded;
 import com.aixoft.reactsample.event.SnapshotCreated;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -20,42 +21,42 @@ public class GeneralAggregateEventListener implements EventListener {
     }
 
     @SubscribeAll
-    public void handleAccountCreated(AccountCreated accountCreated, AggregateRoot aggregateRoot) {
-        log.info("{} - handleAccountCreated for event {} from {}",
+    public void handleAccountCreated(AccountCreated accountCreated, EventVersion version, UUID aggregateId) {
+        log.info("{} - handleAccountCreated for event {}, {} from {}",
                 GeneralAggregateEventListener.class.getTypeName(),
                 accountCreated,
-                aggregateRoot
+                version,
+                aggregateId
         );
     }
 
     @SubscribeAll
-    public void handleEmailModified(EmailModified emailModified, AggregateRoot aggregateRoot) {
-        log.info("{} - handleEmailModified for event {} from {}",
+    public void handleEmailModified(EmailModified emailModified, EventVersion version, UUID aggregateId) {
+        log.info("{} - handleEmailModified for event {}, {} from {}",
                 GeneralAggregateEventListener.class.getTypeName(),
                 emailModified,
-                aggregateRoot
+                version,
+                aggregateId
         );
     }
 
     @SubscribeAll
-    public void handleLoyalPointsAdded(LoyalPointsAdded loyalPointsAdded, AccountInformation aggregateRoot) {
-        log.info("{} - handleLoyalPointsAdded for event {} from {}, totalCount = {}",
+    public void handleLoyalPointsAdded(LoyalPointsAdded loyalPointsAdded, EventVersion version, UUID aggregateId) {
+        log.info("{} - handleLoyalPointsAdded for event {}, {} from {}",
                 GeneralAggregateEventListener.class.getTypeName(),
                 loyalPointsAdded,
-                aggregateRoot,
-                aggregateRoot.getLoyalPoints()
+                version,
+                aggregateId
         );
     }
 
     @SubscribeAll
-    public void handleSnapshotCreated(SnapshotCreated snapshotCreated, AccountInformation aggregateRoot) {
-        log.info("{} - handleSnapshotCreated for event {} from {}, userName={}, email={}, points={}",
+    public void handleSnapshotCreated(SnapshotCreated snapshotCreated, EventVersion version, UUID aggregateId) {
+        log.info("{} - handleSnapshotCreated for event {}, {} from {}",
                 GeneralAggregateEventListener.class.getTypeName(),
                 snapshotCreated,
-                aggregateRoot,
-                aggregateRoot.getUserName(),
-                aggregateRoot.getEmail(),
-                aggregateRoot.getLoyalPoints()
+                version,
+                aggregateId
         );
     }
 
