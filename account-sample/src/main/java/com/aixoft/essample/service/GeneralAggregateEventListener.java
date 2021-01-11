@@ -1,24 +1,19 @@
 package com.aixoft.essample.service;
 
+import com.aixoft.escassandra.annotation.EventListener;
 import com.aixoft.escassandra.annotation.SubscribeAll;
 import com.aixoft.escassandra.model.EventVersion;
-import com.aixoft.escassandra.service.EventListener;
-import com.aixoft.escassandra.service.EventRouter;
 import com.aixoft.essample.event.AccountCreated;
 import com.aixoft.essample.event.EmailModified;
 import com.aixoft.essample.event.LoyalPointsAdded;
 import com.aixoft.essample.event.SnapshotCreated;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-@Service
 @Slf4j
-public class GeneralAggregateEventListener implements EventListener {
-    public GeneralAggregateEventListener(EventRouter eventRouter) {
-        eventRouter.registerEventHandler(this);
-    }
+@EventListener
+public class GeneralAggregateEventListener {
 
     @SubscribeAll
     public void handleAccountCreated(AccountCreated accountCreated, EventVersion version, UUID aggregateId) {
