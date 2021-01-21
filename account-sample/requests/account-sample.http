@@ -13,7 +13,7 @@ POST http://localhost:8080/api/account/loyalPoints
 Content-Type: application/json
 
 {
-  "id" : "8833ebf0-1ba5-11eb-b8b5-ed342e3e1cb5",
+  "id" : "11e82900-544b-11eb-93fb-b7b8df09bc23",
   "loyalPoints" : 20
 }
 
@@ -34,7 +34,7 @@ POST http://localhost:8080/api/account/snapshot
 Content-Type: application/json
 
 {
-  "id" : "8833ebf0-1ba5-11eb-b8b5-ed342e3e1cb5"
+  "id" : "11e82900-544b-11eb-93fb-b7b8df09bc23"
 }
 
 ###
