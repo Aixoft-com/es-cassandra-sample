@@ -5,18 +5,18 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.2.6.RELEASE</version>
+		<version>2.6.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.aixoft</groupId>
 	<artifactId>es-account-sample</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>>0.9-SNAPSHOT</version>
 	<name>account-sample</name>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
-		<java.version>14</java.version>
-		<projectlombok.version>1.18.16</projectlombok.version>
+		<java.version>17</java.version>
+		<projectlombok.version>1.18.22</projectlombok.version>
 	</properties>
 
 	<dependencies>
@@ -44,7 +44,7 @@
 		<dependency>
 			<groupId>com.aixoft</groupId>
 			<artifactId>escassandra</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.9-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>
