@@ -6,4 +6,4 @@ escassandra:
   keyspace: account_reactive_sample
   schema-action: RECREATE # NONE, CREATE, CREATE_IF_NOT_EXISTS, RECREATE, RECREATE_DROP_UNUSED
   contact-points:
-    - 127.0.0.1:9042
+    - localhost:9042
